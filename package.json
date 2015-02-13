@@ -1,8 +1,8 @@
 {
-  "name": "markdown-crawler",
+  "name": "markdoc",
   "version": "0.0.1",
   "description": "Returns map of markdown files in markdown",
-  "main": "markdown-crawler.js",
+  "main": "markdoc.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
