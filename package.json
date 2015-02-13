@@ -12,5 +12,8 @@
     "module"
   ],
   "author": "Ralph Saunders",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "walk": "^2.3.9"
+  }
 }
