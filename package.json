@@ -1,6 +1,6 @@
 {
   "name": "mark-doc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Returns map of markdown files in markdown",
   "main": "markdoc.js",
   "scripts": {
