@@ -1,0 +1,16 @@
+{
+  "name": "markdown-crawler",
+  "version": "1.0.0",
+  "description": "Returns map of markdown files in markdown",
+  "main": "markdown-crawler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "markdown",
+    "npm",
+    "module"
+  ],
+  "author": "Ralph Saunders",
+  "license": "ISC"
+}
