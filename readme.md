@@ -5,13 +5,13 @@ Crawls directories for markdown files.
 
 ## Installation
 
-    npm install markdoc --save
+    npm install mark-doc --save
 
 ## Usage
 
 markdoc can return filtered files as markdown in a string.
 
-    var markdoc = require('markdoc'),
+    var markdoc = require('mark-doc'),
         fs = require('fs');
 
     markdoc.asMarkdown(null, function(string) {
@@ -24,7 +24,7 @@ markdoc can return filtered files as markdown in a string.
 
 markdoc can return filtered files as an array of objects.
 
-    var markdoc = require('markdoc'),
+    var markdoc = require('mark-doc'),
         fs = require('fs');
 
     markdoc.asArray(null, function(arr) {
