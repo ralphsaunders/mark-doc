@@ -1,6 +1,6 @@
 {
   "name": "markdown-crawler",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Returns map of markdown files in markdown",
   "main": "markdown-crawler.js",
   "scripts": {

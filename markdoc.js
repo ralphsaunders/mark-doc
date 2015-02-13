@@ -1,13 +1,11 @@
-'use strict'
-
-var walk = require ('walk'),
+var walk = require('walk'),
     fs = require('fs'),
     util = require('util'),
     fileTypes = [
         'md',
         'mkd',
         'markdown'
-    ]
+    ];
 
 module.exports = {
     asArray: function(path, callback) {
