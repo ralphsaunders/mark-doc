@@ -1,11 +1,24 @@
 var walk = require('walk'),
     fs = require('fs'),
     util = require('util'),
+    Path = require('path'),
     fileTypes = [
         'md',
         'mkd',
         'markdown'
+    ],
+    blacklist = [
+        'node_modules',
+        '.git'
     ];
+
+function popExt(filename) {
+    return filename.split('.').pop();
+};
+
+function inBlacklist(folder) {
+    return blacklist.indexOf(folder) >= 0;
+}
 
 module.exports = {
     asArray: function(path, callback) {
@@ -19,14 +32,15 @@ module.exports = {
             followLinks: false
         });
 
-        var mdFiles = []; // Holds files that match
+        var collection = [];
         walker.on('file', function(root, stat, next) {
-            // Match files that are in fileTypes array
-            if(fileTypes.indexOf(stat.name.split('.').pop()) >= 0) {
-                mdFiles.push({
-                    name: stat.name,
-                    path: root + '/' + stat.name
-                })
+            if(fileTypes.indexOf(popExt(stat.name)) >= 0) {
+                if(! root.split('/').some(inBlacklist)) {
+                    collection.push({
+                        name: stat.name,
+                        path: Path.normalize(Path.relative(__dirname, root) + '/' + stat.name)
+                    });
+                }
             }
 
             next();
@@ -34,7 +48,7 @@ module.exports = {
 
         // Send array of files back when finished
         walker.on('end', function() {
-            callback(mdFiles);
+            callback(collection);
         });
 
         return callback;
@@ -44,7 +58,7 @@ module.exports = {
         this.asArray(path, function(files) {
             var string = files.map(function(file) {
                 return util.format('[%s](%s)', file.name, file.path);
-            }).join('\n\n');
+            }).join('\n');
 
             callback(string);
         });
