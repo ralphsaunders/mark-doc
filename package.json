@@ -1,6 +1,6 @@
 {
   "name": "mark-doc",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Returns tree of markdown files as a markdown formatted TOC",
   "main": "quick-start.js",
   "scripts": {

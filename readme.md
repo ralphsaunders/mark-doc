@@ -9,7 +9,7 @@ Crawls directories for markdown files.
 
 ## Usage
 
-Please refer to [quick-start.js](quick-start.js)
+Please refer to [quick-start.js](https://github.com/ralphsaunders/mark-doc/blob/master/quick-start.js)
 
 ## Release
 
