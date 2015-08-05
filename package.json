@@ -1,8 +1,8 @@
 {
   "name": "mark-doc",
   "version": "0.0.3",
-  "description": "Returns map of markdown files in markdown",
-  "main": "markdoc.js",
+  "description": "Returns tree of markdown files as a markdown formatted TOC",
+  "main": "quick-start.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
