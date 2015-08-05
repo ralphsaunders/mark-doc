@@ -1,5 +1,5 @@
 var walk = require('walk'),
-    fs = require('fs'),
+    //fs = require('fs'),
     util = require('util'),
     Path = require('path'),
     fileTypes = [
@@ -14,16 +14,16 @@ var walk = require('walk'),
 
 function popExt(filename) {
     return filename.split('.').pop();
-};
+}
 
 function inBlacklist(folder) {
     return blacklist.indexOf(folder) >= 0;
 }
 
 module.exports = {
-    asArray: function(path, callback) {
+    asArray: function (path, callback) {
         // Use current path as a default
-        if(!path) {
+        if (!path) {
             path = __dirname
         }
 
@@ -33,13 +33,19 @@ module.exports = {
         });
 
         var collection = [];
-        walker.on('file', function(root, stat, next) {
-            if(fileTypes.indexOf(popExt(stat.name)) >= 0) {
-                if(! root.split('/').some(inBlacklist)) {
+
+        walker.on('file', function (root, stat, next) {
+            if (fileTypes.indexOf(popExt(stat.name)) >= 0) {
+                if (!root.split('/').some(inBlacklist)) {
+                    var file = Path.relative(path, root).replace(/\\+/g, '/').split('/');
                     collection.push({
                         name: stat.name,
-                        path: Path.normalize(Path.relative(__dirname, root) + '/' + stat.name)
+                        path: Path.normalize(Path.relative(__dirname, root) + '/' + stat.name),
+                        position: file.length,
+                        parent: file[file.length - 1],
+                        file: file
                     });
+
                 }
             }
 
@@ -47,22 +53,52 @@ module.exports = {
         });
 
         // Send array of files back when finished
-        walker.on('end', function() {
+        walker.on('end', function () {
+            //console.log(collection);
             callback(collection);
         });
 
         return callback;
     },
 
-    asMarkdown: function(path, callback) {
-        this.asArray(path, function(files) {
-            var string = files.map(function(file) {
-                return util.format('[%s](%s)', file.name, file.path);
+    asMarkdown: function (path, callback) {
+        this.asArray(path, function (files) {
+            var lastPos = 1, lastParent = '', pre;
+            var string = files.map(function (file) {
+                pre = '';
+
+                var indent = '-  ';
+
+                if (lastPos === file.position) {
+                    if (lastParent !== file.parent) {
+                        pre = indent + file.parent + '\n';
+                    }
+
+                } else {
+                    if (file.position > (lastPos + 1)) {
+                        lastPos++;
+                    } else {
+                        lastPos = file.position;
+                    }
+
+                    for (var i = lastPos; i > 1; i--) {
+                        indent = '    ' + indent;
+                    }
+
+                    pre = indent + file.parent + '\n';
+                    lastParent = file.parent;
+
+                }
+
+                return util.format(pre + indent + '[%s](%s)', file.name, file.path);
+
             }).join('\n');
+
+            //console.log(string);
 
             callback(string);
         });
 
         return callback;
     }
-}
+};
