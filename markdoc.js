@@ -70,8 +70,7 @@ module.exports = {
 
     asMarkdown: function (path, callback) {
         this.asArray(path, function (files) {
-            var lastPos = 1,
-                lastParent = '',
+            var lastParent = '',
                 craftedString;
 
             var string = files.map(function (file) {
