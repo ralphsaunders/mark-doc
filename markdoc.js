@@ -36,7 +36,7 @@ module.exports = {
 
         walker.on('file', function (root, stat, next) {
             if (fileTypes.indexOf(popExt(stat.name)) >= 0) {
-                if (!root.split('/').some(inBlacklist)) {
+                if (!root.replace(/\\+/g, '/').split('/').some(inBlacklist)) {
                     var file = Path.relative(path, root).replace(/\\+/g, '/').split('/');
                     collection.push({
                         name: stat.name,
@@ -54,7 +54,6 @@ module.exports = {
 
         // Send array of files back when finished
         walker.on('end', function () {
-            //console.log(collection);
             callback(collection);
         });
 
@@ -93,8 +92,6 @@ module.exports = {
                 return util.format(pre + indent + '[%s](%s)', file.name, file.path);
 
             }).join('\n');
-
-            //console.log(string);
 
             callback(string);
         });
