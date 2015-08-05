@@ -1,16 +1,25 @@
 var walk = require('walk'),
     util = require('util'),
     Path = require('path'),
+    // Markdown filetypes
     fileTypes = [
         'md',
         'mkd',
         'markdown'
     ],
+    // Default backlist
     blacklist = [
         'node_modules',
         '.git'
     ];
 
+/**
+ * Pop extension
+ *
+ * Returns extension for filename
+ *
+ * @return string
+ */
 function popExt(filename) {
     return filename.split('.').pop();
 }
@@ -18,6 +27,8 @@ function popExt(filename) {
 /*
  * Usage: repeatString("abc", 2) == "abcabc"
  * From: http://stackoverflow.com/a/17800645
+ *
+ * @return string
  */
 function repeatString(x, n) {
     var s = '';
@@ -30,74 +41,128 @@ function repeatString(x, n) {
     return s;
 }
 
-module.exports = {
-    asArray: function (path, callback) {
-        // Use current path as a default
-        if (!path) {
-            path = __dirname
+/**
+ * Crawl path
+ *
+ * Crawls path for markdown files.
+ * Ignores directories passed in docIgnore array.
+ *
+ * @return cb(array)
+ */
+function crawlPath(path, docIgnore, cb) {
+    if(!path) {
+        throw new ReferenceError('How can we crawl anything without a path?');
+    }
+
+    if(!Array.isArray(docIgnore)) {
+        throw new TypeError('Ignored directories need to be provided as array');
+    }
+
+    if(!docIgnore.length) {
+        docIgnore = blacklist;
+    }
+
+    var collection = [];
+
+    // Initiate walker
+    var walker = walk.walk(path, {
+        followLinks: false,
+        filters: docIgnore
+    });
+
+    // On every file
+    walker.on('file', function (root, stat, next) {
+        // If it's a markdown type file
+        if (fileTypes.indexOf(popExt(stat.name)) >= 0) {
+            var file = Path.relative(path, root).replace(/\\+/g, '/').split('/');
+            collection.push({
+                name: stat.name,
+                path: Path.normalize(Path.relative(__dirname, root) + '/' + stat.name),
+                depth: file.length,
+                parentDir: file[file.length - 1],
+                file: file
+            });
         }
 
-        // Initiate walker
-        var walker = walk.walk(path, {
-            followLinks: false,
-            filters: blacklist
-        });
+        next();
+    });
 
-        var collection = [];
+    // Send array of files back when finished
+    walker.on('end', function () {
+        cb(collection);
+    });
+}
 
-        walker.on('file', function (root, stat, next) {
-            if (fileTypes.indexOf(popExt(stat.name)) >= 0) {
-                var file = Path.relative(path, root).replace(/\\+/g, '/').split('/');
-                collection.push({
-                    name: stat.name,
-                    path: Path.normalize(Path.relative(__dirname, root) + '/' + stat.name),
-                    depth: file.length,
-                    parentDir: file[file.length - 1],
-                    file: file
-                });
+/**
+ * Markdown format for file
+ *
+ * Returns markdown string containing relative link to file. Will also prepend
+ * file with a heading matching parent directory name. This has the effect of
+ * grouping files by directory in the resulting output.
+ *
+ * @return string
+ */
+function markdownFormat(file) {
+    this.craftedString = '';
+
+    if(this.lastParent !== file.parentDir) {
+        // Creates heading
+        this.craftedString = repeatString('#', file.depth) + ' ' + file.parentDir + '\n';
+
+        // Dirty hack to ensure empty directories are included in
+        // heading hierarchy
+        if(file.path.split('/')[file.depth - 2] !== this.lastParent) {
+            if(file.depth -1 > 0) {
+                this.craftedString = repeatString('#', file.depth - 1) + ' ' +
+                    file.path.split('/')[file.depth - 2] + '\n' +
+                    this.craftedString;
             }
+        }
+    }
 
-            next();
+    this.lastParent = file.parentDir;
+
+    return util.format(this.craftedString + '[%s](%s)', file.name, file.path);
+}
+
+module.exports = {
+    /**
+     * markdoc.asArray
+     *
+     * Crawls path and returns array of files in callback function
+     *
+     * @return cb(array)
+     */
+    asArray: function (path, docIgnore, cb) {
+        if (!path) {
+            path = __dirname;
+        }
+
+        crawlPath(path, docIgnore, function(files) {
+            cb(files);
         });
 
-        // Send array of files back when finished
-        walker.on('end', function () {
-            callback(collection);
-        });
-
-        return callback;
+        return cb;
     },
 
-    asMarkdown: function (path, callback) {
-        this.asArray(path, function (files) {
+    /**
+     * markdoc.asMarkdown
+     *
+     * Wraps asArray and then formats output as markdown.
+     *
+     * @return cb(string)
+     */
+    asMarkdown: function (path, docIgnore, cb) {
+        this.asArray(path, docIgnore, function (files) {
             var lastParent = '',
-                craftedString;
-
-            var string = files.map(function (file) {
                 craftedString = '';
 
-                if(lastParent !== file.parentDir) {
-                    // Creates heading
-                    craftedString = repeatString('#', file.depth) + ' ' + file.parentDir + '\n';
-
-                    // Dirty hack to ensure empty directories are included in
-                    // heading hierarchy
-                    if(file.path.split('/')[file.depth - 2] !== lastParent) {
-                        if(file.depth -1 > 0) {
-                            craftedString = repeatString('#', file.depth - 1) + ' ' + file.path.split('/')[file.depth - 2] + '\n' + craftedString;
-                        }
-                    }
-                }
-
-                lastParent = file.parentDir;
-
-                return util.format(craftedString + '[%s](%s)', file.name, file.path);
-
-            }).join('\n');
-
-            callback(string);
+            cb(
+                files.map(markdownFormat, lastParent, craftedString)
+                    .join('\n')
+            );
         });
 
-        return callback;
+        return cb;
     }
 };

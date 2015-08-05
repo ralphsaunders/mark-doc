@@ -14,9 +14,7 @@
   "author": "Ralph Saunders",
   "license": "ISC",
   "dependencies": {
-    "walk": "^2.3.9"
-  },
-  "devDependencies": {
+    "walk": "^2.3.9",
     "path": "^0.11.14"
-  }
+  },
 }
