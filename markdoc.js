@@ -1,5 +1,4 @@
 var walk = require('walk'),
-    //fs = require('fs'),
     util = require('util'),
     Path = require('path'),
     fileTypes = [
@@ -16,8 +15,19 @@ function popExt(filename) {
     return filename.split('.').pop();
 }
 
-function inBlacklist(folder) {
-    return blacklist.indexOf(folder) >= 0;
+/*
+ * Usage: repeatString("abc", 2) == "abcabc"
+ * From: http://stackoverflow.com/a/17800645
+ */
+function repeatString(x, n) {
+    var s = '';
+    for (;;) {
+        if (n & 1) s += x;
+        n >>= 1;
+        if (n) x += x;
+        else break;
+    }
+    return s;
 }
 
 module.exports = {
@@ -29,24 +39,22 @@ module.exports = {
 
         // Initiate walker
         var walker = walk.walk(path, {
-            followLinks: false
+            followLinks: false,
+            filters: blacklist
         });
 
         var collection = [];
 
         walker.on('file', function (root, stat, next) {
             if (fileTypes.indexOf(popExt(stat.name)) >= 0) {
-                if (!root.replace(/\\+/g, '/').split('/').some(inBlacklist)) {
-                    var file = Path.relative(path, root).replace(/\\+/g, '/').split('/');
-                    collection.push({
-                        name: stat.name,
-                        path: Path.normalize(Path.relative(__dirname, root) + '/' + stat.name),
-                        position: file.length,
-                        parent: file[file.length - 1],
-                        file: file
-                    });
-
-                }
+                var file = Path.relative(path, root).replace(/\\+/g, '/').split('/');
+                collection.push({
+                    name: stat.name,
+                    path: Path.normalize(Path.relative(__dirname, root) + '/' + stat.name),
+                    depth: file.length,
+                    parentDir: file[file.length - 1],
+                    file: file
+                });
             }
 
             next();
@@ -62,34 +70,29 @@ module.exports = {
 
     asMarkdown: function (path, callback) {
         this.asArray(path, function (files) {
-            var lastPos = 1, lastParent = '', pre;
+            var lastPos = 1,
+                lastParent = '',
+                craftedString;
+
             var string = files.map(function (file) {
-                pre = '';
+                craftedString = '';
 
-                var indent = '-  ';
+                if(lastParent !== file.parentDir) {
+                    // Creates heading
+                    craftedString = repeatString('#', file.depth) + ' ' + file.parentDir + '\n';
 
-                if (lastPos === file.position) {
-                    if (lastParent !== file.parent) {
-                        pre = indent + file.parent + '\n';
+                    // Dirty hack to ensure empty directories are included in
+                    // heading hierarchy
+                    if(file.path.split('/')[file.depth - 2] !== lastParent) {
+                        if(file.depth -1 > 0) {
+                            craftedString = repeatString('#', file.depth - 1) + ' ' + file.path.split('/')[file.depth - 2] + '\n' + craftedString;
+                        }
                     }
-
-                } else {
-                    if (file.position > (lastPos + 1)) {
-                        lastPos++;
-                    } else {
-                        lastPos = file.position;
-                    }
-
-                    for (var i = lastPos; i > 1; i--) {
-                        indent = '    ' + indent;
-                    }
-
-                    pre = indent + file.parent + '\n';
-                    lastParent = file.parent;
-
                 }
 
-                return util.format(pre + indent + '[%s](%s)', file.name, file.path);
+                lastParent = file.parentDir;
+
+                return util.format(craftedString + '[%s](%s)', file.name, file.path);
 
             }).join('\n');
 
